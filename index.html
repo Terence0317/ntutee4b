@@ -314,7 +314,8 @@
                         </div>
 
                         <!-- 學生操作按鈕 -->
-                        <div class="mt-4 d-flex gap-2 justify-content-end no-print">
+                        <div class="mt-4 d-flex gap-2 justify-content-end no-print flex-wrap">
+                            <button class="btn btn-outline-info text-dark fw-bold" onclick="refreshStudentData()"><i class="bi bi-arrow-clockwise me-1"></i>更新最新狀態</button>
                             <button class="btn btn-outline-secondary" onclick="window.print()"><i class="bi bi-printer me-1"></i>列印 / 存為PDF</button>
                             <button class="btn btn-outline-primary fw-bold" onclick="showBankModal()"><i class="bi bi-bank me-1"></i>查看匯款帳號</button>
                             <button id="confirmBtn" class="btn btn-success fw-bold px-4" onclick="confirmStudentOrder()"><i class="bi bi-check-circle me-1"></i>確認資料無誤</button>
@@ -579,14 +580,17 @@
             return str;
         }
 
-        function fetchDataFromGAS() {
+        function fetchDataFromGAS(onSuccessCallback) {
             showLoading("正在從 Google 試算表同步最新資料...");
             
             const timer = setTimeout(() => {
                 hideLoading();
             }, 8000);
 
-            fetch(GAS_API_URL)
+            // 加上時間戳記以防止瀏覽器快取舊資料
+            const requestUrl = `${GAS_API_URL}?_t=${Date.now()}`;
+
+            fetch(requestUrl)
                 .then(res => res.json())
                 .then(res => {
                     clearTimeout(timer);
@@ -595,6 +599,7 @@
                         if (currentUser && currentUser.type === 'admin') {
                             renderAdminTable();
                         }
+                        if (onSuccessCallback) onSuccessCallback();
                     } else {
                         Swal.fire('讀取失敗', res.message || '無法取得試算表資料', 'error');
                     }
@@ -604,6 +609,27 @@
                     console.error(err);
                 })
                 .finally(() => hideLoading());
+        }
+
+        // 學生點擊「更新最新狀態」觸發的函式
+        function refreshStudentData() {
+            if (!currentUser || currentUser.type !== 'student') return;
+
+            fetchDataFromGAS(() => {
+                const currentId = currentUser.data.id;
+                const updatedStudent = students.find(s => String(s.id).trim() === String(currentId).trim());
+                if (updatedStudent) {
+                    currentUser.data = updatedStudent;
+                    showStudentView();
+                    Swal.fire({
+                        icon: 'success',
+                        title: '狀態已更新！',
+                        text: '成功同步雲端最新核對與匯款狀態。',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                }
+            });
         }
 
         function saveAllDataToGAS(onSuccessCallback) {
