@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>學士服與畢業攝影訂購系統</title>
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <!-- SweetAlert2 (美化彈出對話視窗) -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         :root {
             --primary-color: #1e3c72;
@@ -97,23 +100,29 @@
         }
         .custom-modal-box {
             background: white;
-            border-radius: 12px;
+            border-radius: 16px;
             width: 90%;
             max-width: 700px;
             max-height: 90vh;
             overflow-y: auto;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.25);
         }
 
         #loadingOverlay {
             position: fixed;
             top:0; left:0; width:100%; height:100%;
-            background: rgba(255,255,255,0.85);
+            background: rgba(255,255,255,0.88);
             z-index: 2000;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
+        }
+
+        /* 甜美圓角 Modal 樣式微調 */
+        .swal2-popup {
+            border-radius: 16px !important;
+            font-family: inherit !important;
         }
 
         @media print {
@@ -127,7 +136,7 @@
     <!-- 載入中動畫 -->
     <div id="loadingOverlay">
         <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"></div>
-        <div class="mt-3 fw-bold text-dark" id="loadingText">正在連線至雲端資料庫...</div>
+        <div class="mt-3 fw-bold text-dark fs-5" id="loadingText">正在連線至雲端資料庫...</div>
     </div>
 
     <!-- 導覽列 -->
@@ -217,7 +226,7 @@
                         
                         <div class="alert alert-info no-print d-flex align-items-center mb-4">
                             <i class="bi bi-info-circle-fill fs-4 me-3"></i>
-                            <div>請確認以下學士服尺寸、單購項目、電繡內容與攝影方案。確認無誤後請點擊下方「確認資料無誤」按鈕。</div>
+                            <div>請核對以下學士服尺寸、單購項目、電繡內容與攝影方案。確認無誤後請點擊下方「確認資料無誤」按鈕。</div>
                         </div>
 
                         <div class="row">
@@ -293,11 +302,10 @@
                             </div>
                         </div>
 
-                        <!-- 學生操作按鈕 -->
+                        <!-- 學生操作按鈕（已暫時移除回報問題按鈕） -->
                         <div class="mt-4 d-flex gap-2 justify-content-end no-print">
                             <button class="btn btn-outline-secondary" onclick="window.print()"><i class="bi bi-printer me-1"></i>列印 / 存為PDF</button>
-                            <!-- <button class="btn btn-warning" onclick="openModifyModal()"><i class="bi bi-pencil-square me-1"></i>回報修改需求</button> -->
-                            <button id="confirmBtn" class="btn btn-success fw-bold" onclick="confirmStudentOrder()"><i class="bi bi-check-circle me-1"></i>確認資料無誤</button>
+                            <button id="confirmBtn" class="btn btn-success fw-bold px-4" onclick="confirmStudentOrder()"><i class="bi bi-check-circle me-1"></i>確認資料無誤</button>
                         </div>
 
                     </div>
@@ -340,8 +348,8 @@
                 <div class="card-header card-header-custom d-flex justify-content-between align-items-center no-print">
                     <h5 class="mb-0"><i class="bi bi-table me-2"></i>學生訂購清單管理</h5>
                     <div>
-                        <button class="btn btn-light btn-sm me-2" onclick="exportCSV()"><i class="bi bi-file-earmark-excel me-1"></i>匯出 CSV</button>
-                        <button class="btn btn-warning btn-sm me-2" onclick="openStudentModal()"><i class="bi bi-person-plus me-1"></i>新增學生</button>
+                        <button class="btn btn-light btn-sm me-2 fw-bold" onclick="exportCSV()"><i class="bi bi-file-earmark-excel me-1"></i>匯出 CSV</button>
+                        <button class="btn btn-warning btn-sm me-2 fw-bold" onclick="openStudentModal()"><i class="bi bi-person-plus me-1"></i>新增學生</button>
                         <button class="btn btn-outline-light btn-sm" onclick="fetchDataFromGAS()"><i class="bi bi-arrow-clockwise me-1"></i>重新整理雲端資料</button>
                     </div>
                 </div>
@@ -391,30 +399,11 @@
 
     </div>
 
-    <!-- Modal 1: 學生修改需求回報 -->
-    <div class="custom-modal-overlay" id="modifyModalOverlay">
-        <div class="custom-modal-box p-4">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="modal-title mb-0"><i class="bi bi-envelope-paper me-2"></i>提出修改需求</h5>
-                <button type="button" class="btn-close" onclick="closeModifyModal()"></button>
-            </div>
-            <p class="small text-muted">如學士服尺寸、電繡文字有誤，請填寫需求提交給班代/管理員處理。</p>
-            <div class="mb-3">
-                <label class="form-label font-weight-bold">說明需要更動的項目與內容</label>
-                <textarea id="modifyNoteText" class="form-control" rows="4" placeholder="例：尺寸想由 M 改為 L，電繡內容少一個字母..."></textarea>
-            </div>
-            <div class="d-flex justify-content-end gap-2">
-                <button type="button" class="btn btn-secondary" onclick="closeModifyModal()">取消</button>
-                <button type="button" class="btn btn-primary" onclick="submitModifyNote()">送出需求</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal 2: 管理員新增/編輯學生 -->
+    <!-- Modal: 管理員新增/編輯學生 -->
     <div class="custom-modal-overlay" id="studentModalOverlay">
         <div class="custom-modal-box">
-            <div class="bg-dark text-white p-3 d-flex justify-content-between align-items-center rounded-top">
-                <h5 class="modal-title mb-0" id="studentModalTitle">編輯學生資料</h5>
+            <div class="bg-primary bg-gradient text-white p-3 d-flex justify-content-between align-items-center rounded-top">
+                <h5 class="modal-title mb-0 fw-bold" id="studentModalTitle"><i class="bi bi-pencil-square me-2"></i>編輯學生資料</h5>
                 <button type="button" class="btn-close btn-close-white" onclick="closeStudentModal()"></button>
             </div>
             <div class="p-4">
@@ -490,7 +479,7 @@
 
                         <div class="col-md-6">
                             <label class="form-label fw-bold">計算應總金額 (自動加總)</label>
-                            <input type="number" id="editAmount" class="form-control" readonly>
+                            <input type="number" id="editAmount" class="form-control bg-light" readonly>
                         </div>
 
                         <div class="col-md-6">
@@ -504,14 +493,14 @@
                 </form>
             </div>
             <div class="p-3 bg-light border-top d-flex justify-content-end gap-2 rounded-bottom">
-                <button type="button" class="btn btn-secondary" onclick="closeStudentModal()">取消</button>
-                <button type="button" class="btn btn-primary" onclick="saveStudentData()">儲存並同步至雲端</button>
+                <button type="button" class="btn btn-secondary px-4" onclick="closeStudentModal()">取消</button>
+                <button type="button" class="btn btn-primary px-4 fw-bold" onclick="saveStudentData()">儲存並同步至雲端</button>
             </div>
         </div>
     </div>
 
     <script>
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzuS6QpRIQJjdv0sI-YFQovt0tvODtoc3SbjiPtb7fXNH5VIMlzgHHEpHDxpRGYHK4I/exec";
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzqoCrjZhu4RkbFXRBjT1Mg30tWAwU0kjKb6f1iNk8ibdPfNt7xxRqZgh-4MqNyK8HY/exec";
 
         const PRICING = {
             plans: {
@@ -565,10 +554,8 @@
         function fetchDataFromGAS() {
             showLoading("正在從 Google 試算表同步最新資料...");
             
-            // 8 秒逾時防卡住機制
             const timer = setTimeout(() => {
                 hideLoading();
-                console.warn("連線時間較長，請檢查網路或 Google 試算表。");
             }, 8000);
 
             fetch(GAS_API_URL)
@@ -581,7 +568,7 @@
                             renderAdminTable();
                         }
                     } else {
-                        alert("讀取雲端資料失敗：" + (res.message || "未知錯誤"));
+                        Swal.fire('讀取失敗', res.message || '無法取得試算表資料', 'error');
                     }
                 })
                 .catch(err => {
@@ -604,12 +591,18 @@
             })
             .then(() => {
                 hideLoading();
-                alert("資料已成功同步更新至 Google 試算表！");
+                Swal.fire({
+                    title: '同步成功！',
+                    text: '資料已順利更新至雲端 Google 試算表。',
+                    icon: 'success',
+                    timer: 1800,
+                    showConfirmButton: false
+                });
                 if (onSuccessCallback) onSuccessCallback();
             })
             .catch(err => {
                 hideLoading();
-                alert("同步雲端失敗：" + err);
+                Swal.fire('同步失敗', String(err), 'error');
             });
         }
 
@@ -652,18 +645,21 @@
                 currentUser = { type: 'student', data: student };
                 showStudentView();
             } else {
-                alert("學號或 3 位數 PIN 碼錯誤！請重新確認。");
+                Swal.fire({
+                    icon: 'error',
+                    title: '登入失敗',
+                    text: '學號或 3 位數 PIN 碼不正確，請重新核對！'
+                });
             }
         }
 
-        // 嚴格管理員登入驗證
         function handleAdminLogin(e) {
             e.preventDefault();
             const acc = document.getElementById('adminAccountInput').value.trim();
             const pwd = document.getElementById('adminPasswordInput').value.trim();
 
             if (!acc || !pwd) {
-                alert("請填寫管理員帳號與密碼！");
+                Swal.fire('請填寫完整', '請輸入管理員帳號與密碼', 'warning');
                 return;
             }
 
@@ -678,16 +674,23 @@
                     if (res && res.status === 'success') {
                         currentUser = { type: 'admin' };
                         showAdminView();
+                        Swal.fire({
+                            icon: 'success',
+                            title: '歡迎回來！',
+                            text: '已成功登入管理後台',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
                     } else {
                         currentUser = null;
-                        alert("管理員驗證失敗：" + (res.message || "帳號或密碼錯誤！"));
+                        Swal.fire('驗證失敗', res.message || '管理員帳號或密碼錯誤！', 'error');
                     }
                 })
                 .catch(err => {
                     hideLoading();
                     currentUser = null;
                     console.error(err);
-                    alert("連線驗證失敗，請確認網路或試算表設定！");
+                    Swal.fire('連線錯誤', '驗證失敗，請確認網路連線或試算表 Admin 分頁設定！', 'error');
                 });
         }
 
@@ -742,34 +745,27 @@
         }
 
         function confirmStudentOrder() {
-            if (confirm("確認資料內容完全正確無誤？")) {
-                const s = currentUser.data;
-                s.confirmed = true;
-                const now = new Date();
-                s.confirmTime = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2,'0')}-${now.getDate().toString().padStart(2,'0')} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
-                
-                saveAllDataToGAS(() => {
-                    showStudentView();
-                });
-            }
-        }
-
-        function openModifyModal() {
-            document.getElementById('modifyModalOverlay').classList.add('active');
-        }
-        function closeModifyModal() {
-            document.getElementById('modifyModalOverlay').classList.remove('active');
-        }
-
-        function submitModifyNote() {
-            const note = document.getElementById('modifyNoteText').value.trim();
-            if (!note) {
-                alert("請填寫需求說明！");
-                return;
-            }
-            alert("修改需求已送出！管理員/班代將會在核對後進行調整。");
-            document.getElementById('modifyNoteText').value = '';
-            closeModifyModal();
+            Swal.fire({
+                title: '確認資料無誤？',
+                text: '確認後將完成訂購資訊之核對。',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#198754',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '是的，確認無誤！',
+                cancelButtonText: '取消'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const s = currentUser.data;
+                    s.confirmed = true;
+                    const now = new Date();
+                    s.confirmTime = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2,'0')}-${now.getDate().toString().padStart(2,'0')} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+                    
+                    saveAllDataToGAS(() => {
+                        showStudentView();
+                    });
+                }
+            });
         }
 
         function showAdminView() {
@@ -855,7 +851,7 @@
         function openStudentModal(studentId = null) {
             const modalTitle = document.getElementById('studentModalTitle');
             if (studentId) {
-                modalTitle.innerText = "編輯學生資料";
+                modalTitle.innerHTML = `<i class="bi bi-pencil-square me-2"></i>編輯學生資料`;
                 const s = students.find(x => String(x.id) === String(studentId));
                 document.getElementById('editOriginalId').value = s.id;
                 document.getElementById('editId').value = s.id;
@@ -869,7 +865,7 @@
                 document.getElementById('editEmbroidery').value = s.embroidery || "";
                 document.getElementById('editConfirmed').value = s.confirmed ? "true" : "false";
             } else {
-                modalTitle.innerText = "新增學生資料";
+                modalTitle.innerHTML = `<i class="bi bi-person-plus me-2"></i>新增學生資料`;
                 document.getElementById('editOriginalId').value = "";
                 document.getElementById('editId').value = "";
                 document.getElementById('editName').value = "";
@@ -897,7 +893,7 @@
             const pin = formatPin(document.getElementById('editPin').value.trim());
 
             if (!newId || !name || !pin) {
-                alert("請完整填寫學號、姓名與 3 位數 PIN 碼！");
+                Swal.fire('欄位未填完整', '請完整填寫學號、姓名與 3 位數 PIN 碼！', 'warning');
                 return;
             }
 
@@ -923,7 +919,7 @@
                 }
             } else {
                 if (students.some(x => String(x.id) === String(newId))) {
-                    alert("該學號已存在！");
+                    Swal.fire('新增失敗', '該學號已經存在於系統中！', 'error');
                     return;
                 }
                 students.push(studentData);
@@ -936,12 +932,23 @@
         }
 
         function deleteStudent(id) {
-            if (confirm(`確定要刪除學號 ${id} 的學生資料嗎？`)) {
-                students = students.filter(x => String(x.id) !== String(id));
-                saveAllDataToGAS(() => {
-                    renderAdminTable();
-                });
-            }
+            Swal.fire({
+                title: `確定要刪除學號 ${id}？`,
+                text: "刪除後此筆學生資料將無法復原！",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '確定刪除',
+                cancelButtonText: '取消'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    students = students.filter(x => String(x.id) !== String(id));
+                    saveAllDataToGAS(() => {
+                        renderAdminTable();
+                    });
+                }
+            });
         }
 
         function exportCSV() {
