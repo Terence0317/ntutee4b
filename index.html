@@ -175,7 +175,7 @@
                             </li>
                         </ul>
                         
-                        <!-- 學生登入區塊 (已移除 PIN 碼) -->
+                        <!-- 學生登入區塊 -->
                         <div id="studentLoginSection">
                             <form onsubmit="handleStudentLogin(event)">
                                 <div class="mb-4">
@@ -352,9 +352,10 @@
 
             <!-- 控制列與表格 -->
             <div class="card card-custom">
-                <div class="card-header card-header-custom d-flex justify-content-between align-items-center no-print">
+                <div class="card-header card-header-custom d-flex justify-content-between align-items-center no-print flex-wrap gap-2">
                     <h5 class="mb-0"><i class="bi bi-table me-2"></i>學生訂購清單管理</h5>
                     <div>
+                        <button class="btn btn-primary btn-sm me-2 fw-bold" onclick="syncFromVendorSheet()"><i class="bi bi-cloud-download me-1"></i>從廠商網頁自動匯入/更新</button>
                         <button class="btn btn-light btn-sm me-2 fw-bold" onclick="exportCSV()"><i class="bi bi-file-earmark-excel me-1"></i>匯出 CSV</button>
                         <button class="btn btn-warning btn-sm me-2 fw-bold" onclick="openStudentModal()"><i class="bi bi-person-plus me-1"></i>新增學生</button>
                         <button class="btn btn-outline-light btn-sm" onclick="fetchDataFromGAS()"><i class="bi bi-arrow-clockwise me-1"></i>重新整理雲端資料</button>
@@ -474,11 +475,13 @@
                         <div class="col-md-4">
                             <label class="form-label fw-bold">學士服尺寸</label>
                             <select id="editSize" class="form-select">
+                                <option value="XS">XS</option>
                                 <option value="S">S</option>
                                 <option value="M">M</option>
                                 <option value="L">L</option>
                                 <option value="XL">XL</option>
                                 <option value="2XL">2XL</option>
+                                <option value="3XL">3XL</option>
                             </select>
                         </div>
 
@@ -518,7 +521,7 @@
     </div>
 
     <script>
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwnOP1Zdx2wgXJO2HeXrTFAgix0so3SIhxqQ0lEn3Y3keXhri2mcr3ymXHQ7w9C_r_n/exec";
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbx8L5zlM32A7nmQ1BESl-perDIQjXG9d7Jpj8j4yJEJb9dk-951Y58Juh82VRmgPyrF/exec";
 
         const BANK_INFO = {
             bankName: "國泰世華銀行 (013)",
@@ -566,21 +569,9 @@
             document.getElementById('loadingOverlay').style.display = 'none';
         }
 
-        function formatPin(pinStr) {
-            let str = String(pinStr || "").trim();
-            while (str.length < 3 && str.length > 0) {
-                str = "0" + str;
-            }
-            return str || "000";
-        }
-
         function fetchDataFromGAS(onSuccessCallback) {
             showLoading("正在從 Google 試算表同步最新資料...");
-            
-            const timer = setTimeout(() => {
-                hideLoading();
-            }, 8000);
-
+            const timer = setTimeout(() => hideLoading(), 8000);
             const requestUrl = `${GAS_API_URL}?_t=${Date.now()}`;
 
             fetch(requestUrl)
@@ -602,6 +593,41 @@
                     console.error(err);
                 })
                 .finally(() => hideLoading());
+        }
+
+        // 從廠商公開網頁自動抓取資料
+        function syncFromVendorSheet() {
+            Swal.fire({
+                title: '確定從廠商網頁匯入？',
+                text: '系統將會自動爬取廠商最新的訂購資料，並建立/更新學生清單。',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: '開始匯入',
+                cancelButtonText: '取消'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    showLoading("正在從廠商公開網頁爬取資料...");
+                    const syncUrl = `${GAS_API_URL}?action=syncFromVendor&_t=${Date.now()}`;
+                    fetch(syncUrl)
+                        .then(res => res.json())
+                        .then(res => {
+                            if (res && res.status === 'success') {
+                                students = res.data;
+                                saveAllDataToGAS(() => {
+                                    renderAdminTable();
+                                    Swal.fire('匯入成功！', `成功從廠商網頁匯入 ${res.count} 筆學生訂購資料。`, 'success');
+                                });
+                            } else {
+                                hideLoading();
+                                Swal.fire('匯入失敗', res.message || '無法解析廠商網頁資料', 'error');
+                            }
+                        })
+                        .catch(err => {
+                            hideLoading();
+                            Swal.fire('連線失敗', String(err), 'error');
+                        });
+                }
+            });
         }
 
         function refreshStudentData() {
@@ -637,13 +663,6 @@
             })
             .then(() => {
                 hideLoading();
-                Swal.fire({
-                    title: '同步成功！',
-                    text: '資料已順利更新至雲端 Google 試算表。',
-                    icon: 'success',
-                    timer: 1800,
-                    showConfirmButton: false
-                });
                 if (onSuccessCallback) onSuccessCallback();
             })
             .catch(err => {
@@ -680,7 +699,6 @@
             return total;
         }
 
-        // 學生登入處理（僅驗證學號）
         function handleStudentLogin(e) {
             e.preventDefault();
             const id = document.getElementById('studentIdInput').value.trim();
@@ -786,7 +804,6 @@
             const confirmBtn = document.getElementById('confirmBtn');
             const confirmTimeText = document.getElementById('sDetailConfirmTime');
 
-            // 核對狀態
             if (s.confirmed) {
                 badge.className = "status-badge bg-success text-white";
                 badge.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i>資料已確認`;
@@ -801,7 +818,6 @@
                 confirmTimeText.innerText = "";
             }
 
-            // 匯款狀態
             if (s.paid) {
                 paidBadge.className = "status-badge bg-success text-white";
                 paidBadge.innerHTML = `<i class="bi bi-currency-dollar me-1"></i>已付款`;
@@ -916,7 +932,7 @@
                     tr.innerHTML = `
                         <td class="fw-bold">${s.id}</td>
                         <td>${s.name}</td>
-                        <td><span class="badge bg-light text-dark border">${formatPin(s.pin)}</span></td>
+                        <td><span class="badge bg-light text-dark border">${s.pin || '-'}</span></td>
                         <td><small>${PRICING.plans[s.planKey] ? PRICING.plans[s.planKey].name : s.planKey}</small></td>
                         <td><small>披肩: ${PRICING.shawl[s.shawlKey]?.name || '無'}<br>綬帶: ${PRICING.ribbon[s.ribbonKey]?.name || '無'}</small></td>
                         <td><small>${PRICING.photo[s.photoKey]?.name || '無'}</small></td>
