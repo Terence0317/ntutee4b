@@ -437,6 +437,7 @@
                         <div class="col-md-12">
                             <label class="form-label fw-bold">主訂購方案</label>
                             <select id="editPlan" class="form-select" onchange="recalculateModalAmount()">
+                                <option value="NONE">無選購/取消 $0</option>
                                 <option value="A1">A1. 學士服整套長租 $300 + 押金 $500/人</option>
                                 <option value="A2">A2. 全新披肩買斷 + 學士服租用 $500 + 押金 $300/人</option>
                                 <option value="A3">A3. 全新學士服整套買斷 $800/人</option>
@@ -521,7 +522,7 @@
     </div>
 
     <script>
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbx8L5zlM32A7nmQ1BESl-perDIQjXG9d7Jpj8j4yJEJb9dk-951Y58Juh82VRmgPyrF/exec";
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbz0eUU47sh3Sak3gAiU2-YPddzqmTDs-zzifrKbw4WyoqOfYlNmU4C9rzku20vfT7X4/exec";
 
         const BANK_INFO = {
             bankName: "國泰世華銀行 (013)",
@@ -530,6 +531,7 @@
 
         const PRICING = {
             plans: {
+                'NONE': { name: '無選購/取消', amount: 0 },
                 'A1': { name: 'A1. 學士服整套長租 $300 + 押金 $500/人', amount: 800 },
                 'A2': { name: 'A2. 全新披肩買斷 + 學士服租用 $500 + 押金 $300/人', amount: 800 },
                 'A3': { name: 'A3. 全新學士服整套買斷 $800/人', amount: 800 }
@@ -595,7 +597,6 @@
                 .finally(() => hideLoading());
         }
 
-        // 從廠商公開網頁自動抓取資料
         function syncFromVendorSheet() {
             Swal.fire({
                 title: '確定從廠商網頁匯入？',
@@ -788,7 +789,7 @@
             document.getElementById('sDetailId').innerText = s.id;
             document.getElementById('sDetailName').innerText = s.name;
             
-            document.getElementById('sDetailPlan').innerText = PRICING.plans[s.planKey] ? PRICING.plans[s.planKey].name : s.planKey;
+            document.getElementById('sDetailPlan').innerText = PRICING.plans[s.planKey] ? PRICING.plans[s.planKey].name : '無選購/取消';
             document.getElementById('sDetailShawl').innerText = PRICING.shawl[s.shawlKey] ? PRICING.shawl[s.shawlKey].name : '無';
             document.getElementById('sDetailRibbon').innerText = PRICING.ribbon[s.ribbonKey] ? PRICING.ribbon[s.ribbonKey].name : '無';
             document.getElementById('sDetailPhotoPlan').innerText = PRICING.photo[s.photoKey] ? PRICING.photo[s.photoKey].name : '無選購/取消';
@@ -933,7 +934,7 @@
                         <td class="fw-bold">${s.id}</td>
                         <td>${s.name}</td>
                         <td><span class="badge bg-light text-dark border">${s.pin || '-'}</span></td>
-                        <td><small>${PRICING.plans[s.planKey] ? PRICING.plans[s.planKey].name : s.planKey}</small></td>
+                        <td><small>${PRICING.plans[s.planKey] ? PRICING.plans[s.planKey].name : '無選購/取消'}</small></td>
                         <td><small>披肩: ${PRICING.shawl[s.shawlKey]?.name || '無'}<br>綬帶: ${PRICING.ribbon[s.ribbonKey]?.name || '無'}</small></td>
                         <td><small>${PRICING.photo[s.photoKey]?.name || '無'}</small></td>
                         <td><span class="badge bg-secondary">${s.size}</span></td>
@@ -989,7 +990,7 @@
                 document.getElementById('editId').value = s.id;
                 document.getElementById('editName').value = s.name;
                 document.getElementById('editPin').value = s.pin || "";
-                document.getElementById('editPlan').value = s.planKey || "A1";
+                document.getElementById('editPlan').value = s.planKey || "NONE";
                 document.getElementById('editShawl').value = s.shawlKey || "NONE";
                 document.getElementById('editRibbon').value = s.ribbonKey || "NONE";
                 document.getElementById('editPhotoPlan').value = s.photoKey || "NONE";
@@ -1003,7 +1004,7 @@
                 document.getElementById('editId').value = "";
                 document.getElementById('editName').value = "";
                 document.getElementById('editPin').value = "";
-                document.getElementById('editPlan').value = "A1";
+                document.getElementById('editPlan').value = "NONE";
                 document.getElementById('editShawl').value = "NONE";
                 document.getElementById('editRibbon').value = "NONE";
                 document.getElementById('editPhotoPlan').value = "NONE";
